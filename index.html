@@ -1,0 +1,168 @@
+<html>
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <style>
+
+
+    body, html {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#b7deed+0,71ceef+50,21b4e2+51,b7deed+100;Shape+1+Style */
+      background: #b7deed; /* Old browsers */
+      background: -moz-linear-gradient(top, #b7deed 0%, #71ceef 50%, #21b4e2 51%, #b7deed 100%); /* FF3.6-15 */
+      background: -webkit-linear-gradient(top, #b7deed 0%,#71ceef 50%,#21b4e2 51%,#b7deed 100%); /* Chrome10-25,Safari5.1-6 */
+      background: linear-gradient(to bottom, #b7deed 0%,#71ceef 50%,#21b4e2 51%,#b7deed 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+      filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#b7deed', endColorstr='#b7deed',GradientType=0 ); /* IE6-9 */
+    }
+
+    #tileset {
+      box-sizing: border-box;
+      width: 15%;
+      border: 5px solid #333;
+      height: 95%;
+      background: #ccc;
+      float: left;
+      resize: both;
+    }
+
+    #map {
+      position: absolute;
+      display: inline-block;
+      box-sizing: border-box;
+      margin: 10px;
+      width: 80%;
+      overflow-x: scroll;
+      left: 15%;
+    }
+
+  </style>
+
+  <script type="text/javascript">
+    var tileSize = 32;
+    var tileSrc = 'tilesets/map_tileset_1.png';
+    var tilesetTiles = [];
+    var backgroundImage = '';
+    var backgroundPositionX = '';
+    var backgroundPositionY = '';
+    var mouseDown = false;
+    var mapHeight = 15;
+    var mapWidth = 100;
+    var columnCount = 0;
+    $(function() {
+      $('#map').height(mapHeight * (tileSize + 2));
+      tilesetImage = new Image();
+      tilesetImage.onload = function() {
+        $tilesetImage = $(this);
+        $tilesetImage.css({
+          position: 'absolute',
+          left: '-10000px',
+          top: '-10000px'
+        });
+        $(document.body).append($tilesetImage);
+
+        var tileCount = ($(this).width() / tileSize) * ($(this).height() / tileSize);
+        for (i=0; i < tileCount; i++) {
+          var $tile = $('<div>');
+          var posX = - ((i * tileSize) % $(this).width()) + 'px';
+          var posY = - Math.floor((i * tileSize) / $(this).width()) * tileSize + 'px';
+          $tile.css({
+            overflow: 'hidden',
+            border: '1px solid black',
+            float: 'left',
+            width: tileSize + 'px',
+            height: tileSize + 'px',
+            backgroundRepeat: 'no-repeat',
+            backgroundImage: 'url(' + tileSrc + ')',
+            backgroundPositionX: posX,
+            backgroundPositionY: posY
+          });
+          $('#tileset').append($tile);
+          tilesetTiles.push($tile);
+          $tile.attr('posX', posX);
+          $tile.attr('posY', posY);
+          $tile.on('click', function() {
+            tilesetTiles.forEach(function(tile) {
+              tile.css({
+                border: '1px solid black'
+              });
+            });
+            var $selectedTile = $(this);
+            $selectedTile.css({
+              border: '1px solid yellow'
+            });
+            backgroundPositionX = $selectedTile.attr('posX');
+            backgroundPositionY = $selectedTile.attr('posY');
+          });
+        }
+
+        function addColumn() {
+
+          $tileColumn = $('<div>').css({
+            display: 'inline-block',
+            boxSizing: 'border-box',
+            position: 'absolute',
+            left: columnCount * tileSize + 1 + 'px',
+            width: tileSize + 'px',
+            height: mapHeight * tileSize + 'px'
+          });
+
+          $('#map').append($tileColumn);
+
+          for (j=0; j < mapHeight; j++) {
+            var $tile = $('<div>');
+            $tile.css({
+              display: 'inline-block',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+              border: '1px solid black',
+              display: 'block',
+              float: 'left',
+              width: tileSize + 'px',
+              height: tileSize + 'px',
+              backgroundRepeat: 'no-repeat'
+            });
+            $tileColumn.append($tile);
+            $tile.on('mouseover', function() {
+              if (!mouseDown) {
+                return;
+              }
+              $(this).css({
+                backgroundImage: 'url(' + tileSrc + ')',
+                backgroundPositionX: backgroundPositionX,
+                backgroundPositionY: backgroundPositionY
+              });
+            });
+            $tile.on('mousedown', function() {
+              $(this).css({
+                backgroundImage: 'url(' + tileSrc + ')',
+                backgroundPositionX: backgroundPositionX,
+                backgroundPositionY: backgroundPositionY
+              });
+            });
+          }
+          columnCount++;
+        }
+
+        for (i=0; i < mapWidth; i++) {
+          addColumn();
+        }
+
+        $(document.body).on('mousedown', function() {
+          mouseDown = true;
+        });
+        $(document.body).on('mouseup', function() {
+          mouseDown = false;
+        });
+
+      }
+      tilesetImage.src = tileSrc;
+    });
+  </script>
+</head>
+<body>
+  <div id="tileset"></div>
+  <div id="map"></div>
+</body>
+</html>
