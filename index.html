@@ -44,13 +44,22 @@
     var tileSrc = 'tilesets/map_tileset_1.png';
     var tilesetTiles = [];
     var backgroundImage = '';
-    var backgroundPositionX = '';
-    var backgroundPositionY = '';
+    var currentPosX = '';
+    var currentPosY = '';
+    var currentTileIndex = 11;
     var mouseDown = false;
     var mapHeight = 15;
     var mapWidth = 100;
     var columnCount = 0;
+    var tileMapWidth = 6;
+    var mapData = [];
     $(function() {
+      for (i=0; i < mapHeight; i++) {
+        mapData[i] = [];
+        for (j=0; j < mapWidth; j++) {
+          mapData[i][j] = 10;
+        }
+      }
       $('#map').height(mapHeight * (tileSize + 2));
       tilesetImage = new Image();
       tilesetImage.onload = function() {
@@ -65,8 +74,8 @@
         var tileCount = ($(this).width() / tileSize) * ($(this).height() / tileSize);
         for (i=0; i < tileCount; i++) {
           var $tile = $('<div>');
-          var posX = - ((i * tileSize) % $(this).width()) + 'px';
-          var posY = - Math.floor((i * tileSize) / $(this).width()) * tileSize + 'px';
+          var posX = i % tileMapWidth;
+          var posY = Math.floor(i / tileMapWidth);
           $tile.css({
             overflow: 'hidden',
             border: '1px solid black',
@@ -75,11 +84,12 @@
             height: tileSize + 'px',
             backgroundRepeat: 'no-repeat',
             backgroundImage: 'url(' + tileSrc + ')',
-            backgroundPositionX: posX,
-            backgroundPositionY: posY
+            backgroundPositionX: - posX * tileSize + 'px',
+            backgroundPositionY: - posY * tileSize + 'px'
           });
           $('#tileset').append($tile);
           tilesetTiles.push($tile);
+          $tile.attr('tileIndex', i);
           $tile.attr('posX', posX);
           $tile.attr('posY', posY);
           $tile.on('click', function() {
@@ -92,8 +102,9 @@
             $selectedTile.css({
               border: '1px solid yellow'
             });
-            backgroundPositionX = $selectedTile.attr('posX');
-            backgroundPositionY = $selectedTile.attr('posY');
+            currentPosX = $selectedTile.attr('posX');
+            currentPosY = $selectedTile.attr('posY');
+            currentTileIndex = $selectedTile.attr('tileIndex');
           });
         }
 
@@ -112,6 +123,9 @@
 
           for (j=0; j < mapHeight; j++) {
             var $tile = $('<div>');
+            $tile.attr('id', columnCount + 'Z' + j);
+            $tile.attr('x', j);
+            $tile.attr('y', columnCount);
             $tile.css({
               display: 'inline-block',
               boxSizing: 'border-box',
@@ -121,28 +135,33 @@
               float: 'left',
               width: tileSize + 'px',
               height: tileSize + 'px',
-              backgroundRepeat: 'no-repeat'
+              backgroundRepeat: 'no-repeat',
+              backgroundImage: 'url(' + tileSrc + ')',
+              backgroundPositionX: - 4 * tileSize + 'px',
+              backgroundPositionY: - 1 * tileSize + 'px'
             });
             $tileColumn.append($tile);
             $tile.on('mouseover', function() {
               if (!mouseDown) {
                 return;
               }
-              $(this).css({
-                backgroundImage: 'url(' + tileSrc + ')',
-                backgroundPositionX: backgroundPositionX,
-                backgroundPositionY: backgroundPositionY
-              });
+              setMap($(this));
             });
             $tile.on('mousedown', function() {
-              $(this).css({
-                backgroundImage: 'url(' + tileSrc + ')',
-                backgroundPositionX: backgroundPositionX,
-                backgroundPositionY: backgroundPositionY
-              });
+              setMap($(this));
             });
           }
           columnCount++;
+        }
+
+        function setMap($tile) {
+          $tile.css({
+            backgroundImage: 'url(' + tileSrc + ')',
+            backgroundPositionX: - currentPosX * tileSize + 'px',
+            backgroundPositionY: - currentPosY * tileSize + 'px'
+          });
+          console.log(currentPosX, currentPosY);
+          mapData[$tile.attr('x')][$tile.attr('y')] = currentTileIndex;
         }
 
         for (i=0; i < mapWidth; i++) {
@@ -155,6 +174,40 @@
         $(document.body).on('mouseup', function() {
           mouseDown = false;
         });
+        $('#exportButton').on('click', function() {
+          var exportedData = {
+            tiles: []
+          };
+          var x = 0;
+          var y = 0;
+          mapData.forEach(function(yArray) {
+            yArray.forEach(function(tileIndex) {
+              exportedData.tiles.push({
+                tileIndex: tileIndex,
+                x: x,
+                y: y
+              });
+              x = (x + 1) % mapWidth;
+            });
+            y++;
+          });
+          $('#exportData').val(JSON.stringify(exportedData));
+        });
+
+        $('#importButton').on('click', function() {
+          var newMapData = JSON.parse($('#importData').val());
+          newMapData.tiles.forEach(function(tile) {
+            var posX = tile.tileIndex % tileMapWidth;
+            var posY = Math.floor(tile.tileIndex / tileMapWidth);
+            $mapTile = $('#' + tile.x + 'Z' + tile.y);
+            currentPosX = posX;
+            currentPosY = posY;
+            currentTileIndex = tile.tileIndex;
+
+            console.log(currentPosX, currentPosY);
+            setMap($mapTile);
+          });
+        });
 
       }
       tilesetImage.src = tileSrc;
@@ -164,5 +217,10 @@
 <body>
   <div id="tileset"></div>
   <div id="map"></div>
+  <div style="clear: both;"></div>
+  <div id="exportButton">Export</div>
+  <textarea id="exportData"></textarea>
+  <div id="importButton">Import</div>
+  <textarea id="importData"></textarea>
 </body>
 </html>
